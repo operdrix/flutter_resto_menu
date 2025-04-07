@@ -4,29 +4,29 @@ void main() {
   runApp(MyApp());
 }
 
-// Application principale avec MaterialApp
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Menu du Restaurant',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(primarySwatch: Colors.orange),
       home: RestaurantMenuPage(),
     );
   }
 }
 
-// Page principale du menu (Stateful pour gérer la sélection)
 class RestaurantMenuPage extends StatefulWidget {
   @override
   _RestaurantMenuPageState createState() => _RestaurantMenuPageState();
 }
 
 class _RestaurantMenuPageState extends State<RestaurantMenuPage> {
-  // Liste des catégories disponibles
-  final List<String> categories = ['Nos entrées délicieuses', 'Nos plats hors du commun', 'Des desserts savoureux'];
+  final List<String> categories = [
+    'Nos entrées délicieuses',
+    'Nos plats hors du commun',
+    'Des desserts savoureux'
+  ];
 
-  // Catégorie sélectionnée par défaut
   String selectedCategory = 'Nos entrées délicieuses';
 
   // Données des plats codées en dur
@@ -201,10 +201,8 @@ class _RestaurantMenuPageState extends State<RestaurantMenuPage> {
     },
   ];
 
-  // Filtre les plats selon la catégorie sélectionnée
-  List<Map<String, dynamic>> get filteredDishes {
-    return allDishes.where((dish) => dish['category'] == selectedCategory).toList();
-  }
+  List<Map<String, dynamic>> get filteredDishes =>
+      allDishes.where((dish) => dish['category'] == selectedCategory).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -216,94 +214,108 @@ class _RestaurantMenuPageState extends State<RestaurantMenuPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Barre de catégories défilable horizontalement
-          Container(
-            height: 60,
-            child: ListView.builder(
+          SizedBox(height: 10),
+          SizedBox(
+            height: 50,
+            child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: categories.length,
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              separatorBuilder: (_, __) => SizedBox(width: 8),
               itemBuilder: (context, index) {
-                String category = categories[index];
-                bool isSelected = category == selectedCategory;
-                return GestureDetector(
-                  onTap: () {
+                final category = categories[index];
+                final isSelected = category == selectedCategory;
+                return ChoiceChip(
+                  label: Text(
+                    category,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedColor: Colors.orange,
+                  backgroundColor: Colors.orange[100],
+                  onSelected: (_) {
                     setState(() {
                       selectedCategory = category;
                     });
                   },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    margin: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.orange : Colors.orange[100],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Center(
-                      child: Text(
-                        category,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
                 );
               },
             ),
           ),
-          // Liste des plats pour la catégorie sélectionnée
+          SizedBox(height: 10),
           Expanded(
-            child: ListView.builder(
-              itemCount: filteredDishes.length,
-              itemBuilder: (context, index) {
-                var dish = filteredDishes[index];
-                return Card(
-                  margin: EdgeInsets.all(10),
-                  elevation: 3,
-                  child: Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Row(
-                      children: [
-                        // Image du plat
-                        Image.network(
-                          dish['image'],
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                        SizedBox(width: 10),
-                        // Infos sur le plat
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                dish['name'],
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                '€${dish['price'].toString()}',
-                                style: TextStyle(color: Colors.green),
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                dish['description'],
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            child: AnimatedSwitcher(
+              duration: Duration(milliseconds: 300),
+              switchInCurve: Curves.easeIn,
+              switchOutCurve: Curves.easeOut,
+              child: ListView.builder(
+                key: ValueKey<String>(selectedCategory),
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                itemCount: filteredDishes.length,
+                itemBuilder: (context, index) {
+                  final dish = filteredDishes[index];
+                  return DishCard(dish: dish);
+                },
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class DishCard extends StatelessWidget {
+  final Map<String, dynamic> dish;
+  const DishCard({required this.dish});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                dish['image'],
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dish['name'],
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    '€${dish['price'].toStringAsFixed(2)}',
+                    style: TextStyle(color: Colors.green[700]),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    dish['description'],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
